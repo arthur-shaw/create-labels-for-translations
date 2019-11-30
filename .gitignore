@@ -1,0 +1,12 @@
+# Text files
+*.txt
+
+# Excel files
+*.xlsx
+*.xls
+
+# Stata output files
+*.do
+
+# troubleshooting folder
+troubleshooting/
