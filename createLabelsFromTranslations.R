@@ -1,4 +1,33 @@
 
+columnExists <- function(data, column) {
+
+# =============================================================================
+# Load necessary libraries
+# =============================================================================
+
+# packages needed for this program 
+packagesNeeded <- c(
+	"rlang" 	# for interpretting user inputs to functions
+)														
+
+# identify and install those packages that are not already installed
+packagesToInstall <- packagesNeeded[!(packagesNeeded %in% installed.packages()[,"Package"])]
+if(length(packagesToInstall)) install.packages(packagesToInstall, quiet = TRUE, repos = 'https://cloud.r-project.org/', dep = TRUE)
+
+# load all needed packages
+lapply(packagesNeeded, library, character.only = TRUE)
+
+# =============================================================================
+# Check that specified column exists in specified data frame
+# =============================================================================
+
+if (!as_name(ensym(column)) %in% colnames(data)) {
+	stop(paste0("Column ", "`", as_name(enquo(column)), 
+		"` does not exist in", "`", deparse(substitute(data)), "`"))
+}
+
+}
+
 translate_varLablels = function(
 	input_path, 	# file path to Excel file input
 	output_path 	# desired file path to Stata .do file output
@@ -11,6 +40,7 @@ translate_varLablels = function(
 # packages needed for this program 
 packagesNeeded <- c(
 	"readxl", 	# for ingesting Excel translation file
+	"purrr", 	# for checking a list of columns
 	"dplyr",	# for convenient data wrangling
 	"stringr", 	# for removing undesirable content from translations
 	"readr" 	# for writing text to Stata .do file
@@ -28,16 +58,21 @@ lapply(packagesNeeded, library, character.only = TRUE)
 # =============================================================================
 
 # confirm that file exists
+if (file.exists(input_path) == FALSE) {
+	stop("File specified in `input_path` does not exist. Check the file path and/or name.")
+}
 
 # confirm that file is Excel
+if (is.na(readxl::excel_format(path = input_path))) {
+	stop("File is either not Excel or not a known format. Please specify a file with Excel format.")
+}
 
 # injest content
 translation <- read_excel(path = input_path, sheet = "Translations", col_names = TRUE)
 
 # confirm that needed columns exist
-	# Variable
-	# Type
-	# Translation
+colsToCheck <- c("Variable", "Type", "Translation") # vector of variable names
+walk(.x = colsToCheck, .f = columnExists, data = translation) # iterate over variable names
 
 # =============================================================================
 # Form variable label commands in Stata syntax
@@ -85,6 +120,7 @@ translate_valLablels = function(
 # packages needed for this program 
 packagesNeeded <- c(
 	"readxl", 	# for ingesting Excel translation file
+	"purrr", 	# for checking a list of columns	
 	"dplyr",	# for convenient data wrangling
 	"stringr", 	# for removing undesirable content from translations
 	"readr" 	# for writing text to Stata .do file
@@ -102,16 +138,21 @@ lapply(packagesNeeded, library, character.only = TRUE)
 # =============================================================================
 
 # confirm that file exists
+if (file.exists(input_path) == FALSE) {
+	stop("File specified in `input_path` does not exist. Check the file path and/or name.")
+}
 
 # confirm that file is Excel
+if (is.na(readxl::excel_format(path = input_path))) {
+	stop("File is either not Excel or not a known format. Please specify a file with Excel format.")
+}
 
 # injest content
 translation <- read_excel(path = input_path, sheet = "Translations", col_names = TRUE)
 
 # confirm that needed columns exist
-	# Variable
-	# Type
-	# Translation
+colsToCheck <- c("Variable", "Type", "Translation") # vector of variable names
+walk(.x = colsToCheck, .f = columnExists, data = translation) # iterate over variable names
 
 # =============================================================================
 # Form variable label commands in Stata syntax
@@ -149,15 +190,3 @@ attachLabels <- defineLabels %>% distinct(Variable, .keep_all = TRUE) %>%
 readr::write_lines(attachLabels$command, path = output_path, append = TRUE)
 
 }
-
-
-# define file folder and file
-fileDir <- "C:/Users/wb393438/Survey Solutions/create-labels-for-translations/"
-excelFile <- "[LSMS PLUS QUESTIONNAIRE 2019 11o]LSMS PLUS  CAMBODIA QUESTIONNAIRE 2019 (1).xlsx"
-
-
-# take data from the Excel translation file to create a .do file named varlabels.do
-translate_varLablels(input_path = paste0(fileDir, excelFile), output_path = paste0(fileDir, "varlabels.do"))
-
-# take data from the Excel translation file to create a .do file named val_labels.do
-translate_valLablels(input_path = paste0(fileDir, excelFile), output_path = paste0(fileDir, "val_labels.do"), label_prefix = "kh")
