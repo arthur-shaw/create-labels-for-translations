@@ -28,7 +28,7 @@ if (!as_name(ensym(column)) %in% colnames(data)) {
 
 }
 
-translate_varLablels = function(
+trans_var_lbls = function(
 	input_path, 	# file path to Excel file input
 	output_path 	# desired file path to Stata .do file output
 ) {
@@ -107,7 +107,7 @@ readr::write_lines(variables$varLabel, path = output_path, append = TRUE)
 
 
 
-translate_valLablels = function(
+trans_val_lbls = function(
 	input_path, 	# file path to Excel file input
 	output_path, 	# desired file path to Stata .do file output
 	label_prefix 	# prefix to label name
